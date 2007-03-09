@@ -1,0 +1,14 @@
+lib/Sub/WrapPackages.pm
+t/00_wrap_as_subs.t
+t/01_wrap_as_packages.t
+t/02_wrap_inherited.t
+t/lib/a.pm
+t/lib/b.pm
+MANIFEST
+README
+TODO
+Changes
+Makefile.PL
+t/lib/Banana.pm
+t/03_wrap_inherited_in_same_file.t
+META.yml                                 Module meta-data (added by MakeMaker)
