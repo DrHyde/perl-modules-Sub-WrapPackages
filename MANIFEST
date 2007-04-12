@@ -11,4 +11,3 @@ Changes
 Makefile.PL
 t/lib/Banana.pm
 t/03_wrap_inherited_in_same_file.t
-META.yml                                 Module meta-data (added by MakeMaker)
