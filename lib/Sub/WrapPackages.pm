@@ -16,7 +16,7 @@ subroutines in packages or around individual subs
 
 =head1 SYNOPSIS
 
-    use Sub::WrapPackages (
+    use Sub::WrapPackages
         packages => [qw(Foo Bar)],        # wrap all Foo::* and Bar::*
         subs     => [qw(Baz::a, Baz::b)], # wrap these two subs as well
         wrap_inherited => 1,              # and wrap any methods
@@ -27,7 +27,7 @@ subroutines in packages or around individual subs
 	},
 	post     => sub {
 	    print "$_[0] returned $_[1]\n";
-	},
+	};
 
 =head1 DESCRIPTION
 
@@ -84,9 +84,17 @@ AUTOLOAD and DESTROY are not treated as being special.
 I like to know who's using my code.  All comments, including constructive
 criticism, are welcome.  Please email me.
 
-=head1 AUTHOR and CREDITS
+=head1 SOURCE CODE REPOSITORY
 
-David Cantrell E<lt>F<david@cantrell.org.uk>E<gt>
+L<http://www.cantrell.org.uk/cgit/cgit.cgi/perlmodules/>
+
+=head1 COPYRIGHT and LICENCE
+
+Copyright 2003-2009 David Cantrell E<lt>F<david@cantrell.org.uk>E<gt>
+
+This software is free-as-in-speech software, and may be used, distributed, and modified under the terms of either the GNU General Public Licence version 2 or the Artistic Licence. It's up to you which one you use. The full text of the licences can be found in the files GPL2.txt and ARTISTIC.txt, respectively.
+
+=head1 THANKS TO
 
 Thanks also to Adam Trickett who thought this was a jolly good idea,
 Tom Hukins who prompted me to add support for inherited methods, and Ed
@@ -96,23 +104,16 @@ I borrowed out of L<Acme::Voodoo>.
 Thanks to Tom Hukins for sending in a test case for the situation when
 a class and a subclass are both defined in the same file.
 
-=head1 COPYRIGHT and LICENCE
-
-Copyright 2003 - 2006 David Cantrell
-
-This module is free-as-in-speech software, and may be used, distributed,
-and modified under the same terms as Perl itself.
-
 =cut
 
 use Hook::LexWrap;
 
 sub import {
-    my $i_am_weasel = shift;
-    wrapsubs(@_) if(@_);
+    shift;
+    _wrapsubs(@_) if(@_);
 }
 
-sub subs_in_packages {
+sub _subs_in_packages {
     my @targets = map { $_.'::' } @_;
 
     my @subs;
@@ -125,7 +126,7 @@ sub subs_in_packages {
     return @subs;
 }
 
-sub wrapsubs {
+sub _wrapsubs {
     my %params = @_;
 
     if(exists($params{packages}) && ref($params{packages}) =~ /^ARRAY/) {
@@ -137,13 +138,13 @@ sub wrapsubs {
                 # get inherited (but not over-ridden!) subs
                 my %subs_in_package = map {
                     s/.*:://; ($_, 1);
-                } subs_in_packages($package);
+                } _subs_in_packages($package);
 
                 my @subs_to_define = grep {
                     !exists($subs_in_package{$_})
                 } map { 
                     s/.*:://; $_;
-                } subs_in_packages(@parents);
+                } _subs_in_packages(@parents);
 
                 # define them in $package using SUPER
 		foreach my $sub (@subs_to_define) {
@@ -160,7 +161,7 @@ sub wrapsubs {
 		}
             }
         }
-        push @{$params{subs}}, subs_in_packages(@{$params{packages}});
+        push @{$params{subs}}, _subs_in_packages(@{$params{packages}});
     } elsif(exists($params{packages})) {
         die("Bad param 'packages'");
     }
