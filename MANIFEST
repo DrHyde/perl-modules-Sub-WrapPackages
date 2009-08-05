@@ -16,3 +16,4 @@ t/pod.t
 t/04_wrap_tree_of_packages.t
 t/lib/Banana/Tree.pm
 t/01b_wrap_as_packages_late_loading.t
+t/04b_wrap_tree_of_packages_after_loading.t
