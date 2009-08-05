@@ -3,13 +3,11 @@ use warnings;
 
 package Sub::WrapPackages;
 
-use vars qw($VERSION $wildcard_packages);
-
-use Data::Dumper;
-use IO::Scalar;
+use vars qw($VERSION);
 
 $VERSION = '1.2';
-$wildcard_packages = [];
+
+use Hook::LexWrap;
 
 =head1 NAME
 
@@ -51,9 +49,17 @@ you look at the source I haven't tested it.  Patches welcome!
 
 In the synopsis above, you will see two named parameters, C<subs> and
 C<packages>.  Any subroutine mentioned in C<subs> will be wrapped.  Any
-packages mentioned in C<packages> will have all their subroutines wrapped.
+packages mentioned in C<packages> will have all their subroutines wrapped,
+including any that they import.
 
-The order in which packages are loaded is not important.
+Any subroutines mentioned in 'subs' must already exist - ie their modules
+must be loaded - at the time you try to wrap them.  Otherwise the order in
+which modules are loaded doesn't matter due to Stunt Code.
+
+Note, however, that if a module exports a subroutine at load-time using
+C<import> then that sub will be wrapped in the exporting module but not in
+the importing module.  This is because import() runs before we get a chance
+to fiddle with things.
 
 =item wrap_inherited
 
@@ -110,31 +116,14 @@ I borrowed out of L<Acme::Voodoo>.
 Thanks to Tom Hukins for sending in a test case for the situation when
 a class and a subclass are both defined in the same file.
 
-=cut
+Thanks to Dagfinn Ilmari Mannsaker for help with the craziness for
+fiddling with modules that haven't yet been loaded.
 
-use Hook::LexWrap;
+=cut
 
 sub import {
     shift;
     _wrapsubs(@_) if(@_);
-    unshift @INC,
-    sub {
-        my($me, $file) = @_;
-        local @INC = grep { $_ ne $me } @INC;
-        local $/;
-        print "magic \@INC called looking for $file\n";
-        my @files = grep { -e $_ } map { join('/', $_, $file) } @INC;
-        print "Loading $files[0]\n";
-        open(my $fh, $files[0]) || die("Can't locate $file in \@INC\n");
-        my $module = <$fh>;
-        close($fh);
-        $module .= q{
-            ;print "And now I'm diddling it\n";
-            1;
-        };
-        print $module;
-        return IO::Scalar->new(\$module);
-    };
 }
 
 sub _subs_in_packages {
@@ -150,12 +139,50 @@ sub _subs_in_packages {
     return @subs;
 }
 
+sub _make_magic_inc {
+    my %params = @_;
+    my $wildcard_packages = [map { s/::.//; $_; } grep { /::\*$/ } @{$params{packages}}];
+    my $nonwildcard_packages = [grep { $_ !~ /::\*$/ } @{$params{packages}}];
+
+    unshift @INC, sub {
+        my($me, $file) = @_;
+        (my $module = $file) =~ s{/}{::}g;
+        $module =~ s/\.pm//;
+        return undef unless(
+            # $module matches one of wildcard_packages
+            (grep { $module =~ /^$_(::|$)/ } @{$wildcard_packages}) ||
+            # $module matches one of wildcard_packages
+            (grep { $module eq $_ } @{$nonwildcard_packages})
+        );
+        local @INC = grep { $_ ne $me } @INC;
+        local $/;
+        my @files = grep { -e $_ } map { join('/', $_, $file) } @INC;
+        open(my $fh, $files[0]) || die("Can't locate $file in \@INC\n");
+        my $text = <$fh>;
+        close($fh);
+        %Sub::WrapPackages::params = %params;
+        $text .= qq[
+            ;
+            print "Now wrapping ...\n";
+            Sub::WrapPackages::_wrapsubs(
+                %Sub::WrapPackages::params,
+                packages => [qw($module)]
+            );
+            1;
+        ];
+        open($fh, '<', \$text);
+        $fh;
+    };
+}
+
 sub _wrapsubs {
     my %params = @_;
 
     if(exists($params{packages}) && ref($params{packages}) =~ /^ARRAY/) {
-        $wildcard_packages = [@{$wildcard_packages}, grep { /::\*$/ } @{$params{packages}}];
+        my $wildcard_packages = [map { (my $foo = $_) =~ s/::.$//; $foo; } grep { /::\*$/ } @{$params{packages}}];
         my $nonwildcard_packages = [grep { $_ !~ /::\*$/ } @{$params{packages}}];
+        _make_magic_inc(%params);
+
         if($params{wrap_inherited}) {
             foreach my $package (@{$nonwildcard_packages}) {
                 # FIXME? does this work with 'use base'
