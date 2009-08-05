@@ -59,7 +59,8 @@ which modules are loaded doesn't matter due to Stunt Code.
 Note, however, that if a module exports a subroutine at load-time using
 C<import> then that sub will be wrapped in the exporting module but not in
 the importing module.  This is because import() runs before we get a chance
-to fiddle with things.
+to fiddle with things.  The code for deferred fiddlage isn't re-entrant.
+It's probably horribly fragile in all kinds of other ways too.
 
 =item wrap_inherited
 
@@ -149,9 +150,7 @@ sub _make_magic_inc {
         (my $module = $file) =~ s{/}{::}g;
         $module =~ s/\.pm//;
         return undef unless(
-            # $module matches one of wildcard_packages
             (grep { $module =~ /^$_(::|$)/ } @{$wildcard_packages}) ||
-            # $module matches one of wildcard_packages
             (grep { $module eq $_ } @{$nonwildcard_packages})
         );
         local @INC = grep { $_ ne $me } @INC;
