@@ -3,11 +3,13 @@ use warnings;
 
 package Sub::WrapPackages;
 
-use vars qw($VERSION);
+use vars qw($VERSION $wildcard_packages);
 
 use Data::Dumper;
+use IO::Scalar;
 
 $VERSION = '1.2';
+$wildcard_packages = [];
 
 =head1 NAME
 
@@ -17,17 +19,19 @@ subroutines in packages or around individual subs
 =head1 SYNOPSIS
 
     use Sub::WrapPackages
-        packages => [qw(Foo Bar)],        # wrap all Foo::* and Bar::*
-        subs     => [qw(Baz::a, Baz::b)], # wrap these two subs as well
-        wrap_inherited => 1,              # and wrap any methods
-                                          # inherited by Foo and Bar
-	pre      => sub {
-	    print "called $_[0] with params ".
-	      join(', ', @_[1..$#_])."\n";
-	},
-	post     => sub {
-	    print "$_[0] returned $_[1]\n";
-	};
+        packages => [qw(Foo Bar Baz::*)],   # wrap all subs in Foo and Bar
+                                            #   and any Baz::* packages
+        subs     => [qw(Barf::a, Barf::b)], # wrap these two subs as well
+        wrap_inherited => 1,                # and wrap any methods
+                                            #   inherited by Foo, Bar, or
+                                            #   Baz::*
+        pre      => sub {
+            print "called $_[0] with params ".
+              join(', ', @_[1..$#_])."\n";
+        },
+        post     => sub {
+            print "$_[0] returned $_[1]\n";
+        };
 
 =head1 DESCRIPTION
 
@@ -48,6 +52,8 @@ you look at the source I haven't tested it.  Patches welcome!
 In the synopsis above, you will see two named parameters, C<subs> and
 C<packages>.  Any subroutine mentioned in C<subs> will be wrapped.  Any
 packages mentioned in C<packages> will have all their subroutines wrapped.
+
+The order in which packages are loaded is not important.
 
 =item wrap_inherited
 
@@ -111,6 +117,24 @@ use Hook::LexWrap;
 sub import {
     shift;
     _wrapsubs(@_) if(@_);
+    unshift @INC,
+    sub {
+        my($me, $file) = @_;
+        local @INC = grep { $_ ne $me } @INC;
+        local $/;
+        print "magic \@INC called looking for $file\n";
+        my @files = grep { -e $_ } map { join('/', $_, $file) } @INC;
+        print "Loading $files[0]\n";
+        open(my $fh, $files[0]) || die("Can't locate $file in \@INC\n");
+        my $module = <$fh>;
+        close($fh);
+        $module .= q{
+            ;print "And now I'm diddling it\n";
+            1;
+        };
+        print $module;
+        return IO::Scalar->new(\$module);
+    };
 }
 
 sub _subs_in_packages {
@@ -118,10 +142,10 @@ sub _subs_in_packages {
 
     my @subs;
     foreach my $package (@targets) {
-	no strict;
+        no strict;
         while(my($k, $v) = each(%{$package})) {
-	    push @subs, $package.$k if(defined(&{$v}));
-	}
+            push @subs, $package.$k if(defined(&{$v}));
+        }
     }
     return @subs;
 }
@@ -130,8 +154,10 @@ sub _wrapsubs {
     my %params = @_;
 
     if(exists($params{packages}) && ref($params{packages}) =~ /^ARRAY/) {
+        $wildcard_packages = [@{$wildcard_packages}, grep { /::\*$/ } @{$params{packages}}];
+        my $nonwildcard_packages = [grep { $_ !~ /::\*$/ } @{$params{packages}}];
         if($params{wrap_inherited}) {
-            foreach my $package (@{$params{packages}}) {
+            foreach my $package (@{$nonwildcard_packages}) {
                 # FIXME? does this work with 'use base'
                 my @parents = eval '@'.$package.'::ISA';
 
@@ -147,18 +173,18 @@ sub _wrapsubs {
                 } _subs_in_packages(@parents);
 
                 # define them in $package using SUPER
-		foreach my $sub (@subs_to_define) {
-		    no strict;
-		    *{$package."::$sub"} = eval "
-		        sub {
-			    package $package;
+                foreach my $sub (@subs_to_define) {
+                    no strict;
+                    *{$package."::$sub"} = eval "
+                        sub {
+                            package $package;
                             my \$self = shift;
                             \$self->SUPER::$sub(\@_);
                         };
-	            ";
-		    eval 'package __PACKAGE__';
-		    # push @{$params{subs}}, $package."::$sub";
-		}
+                    ";
+                    eval 'package __PACKAGE__';
+                    # push @{$params{subs}}, $package."::$sub";
+                }
             }
         }
         push @{$params{subs}}, _subs_in_packages(@{$params{packages}});

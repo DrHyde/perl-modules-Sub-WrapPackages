@@ -13,3 +13,7 @@ t/lib/Banana.pm
 t/03_wrap_inherited_in_same_file.t
 t/pod-coverage.t
 t/pod.t
+t/04_wrap_tree_of_packages.t
+t/lib/Banana/Tree.pm
+t/01b_wrap_as_packages_late_loading.t
+t/00b_wrap_as_subs.t
