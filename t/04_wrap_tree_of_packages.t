@@ -3,6 +3,8 @@ use warnings;
 
 use lib 't/lib';
 
+# $SIG{__WARN__} = sub { die(@_); }
+
 use Test::More tests => 8;
 
 use Sub::WrapPackages (

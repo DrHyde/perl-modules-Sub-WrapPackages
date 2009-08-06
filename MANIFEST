@@ -20,3 +20,4 @@ t/04b_wrap_tree_of_packages_after_loading.t
 ARTISTIC.txt
 GPL2.txt
 t/lib/Orchard/Tree/Pear/Conference.pm
+t/05___DATA__.t
