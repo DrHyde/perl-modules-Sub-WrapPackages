@@ -9,7 +9,6 @@ use Banana::Tree;
 use Orchard::Tree::Pear::Conference;
 
 use Sub::WrapPackages (
-    # NB wildcard for stuff that *has* been loaded doesn't work
     packages => [qw(Banana::Tree Orchard::*)],
     pre      => sub {
         ok(1, "$_[0] pre-wrapper")

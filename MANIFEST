@@ -21,3 +21,6 @@ ARTISTIC.txt
 GPL2.txt
 t/lib/Orchard/Tree/Pear/Conference.pm
 t/05___DATA__.t
+t/lib/Module/With/Data/Segment.pm
+t/lib/Module/With/END/Segment.pm
+t/lib/Module/With/Both/Segments.pm

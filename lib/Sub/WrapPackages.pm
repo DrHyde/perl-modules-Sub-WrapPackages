@@ -5,7 +5,7 @@ package Sub::WrapPackages;
 
 use vars qw($VERSION);
 
-$VERSION = '1.2';
+$VERSION = '1.3';
 
 use Hook::LexWrap;
 
@@ -160,15 +160,17 @@ sub _make_magic_inc {
         my $text = <$fh>;
         close($fh);
         %Sub::WrapPackages::params = %params;
-        $text .= qq[
+
+        $text =~ /(.*?)(__DATA__|__END__|$)/s;
+        my($code, $trailer) = ($1, $2);
+        $text = $code.qq[
             ;
-            print "Now wrapping ...\n";
             Sub::WrapPackages::_wrapsubs(
                 %Sub::WrapPackages::params,
                 packages => [qw($module)]
             );
             1;
-        ];
+        ].$trailer;
         open($fh, '<', \$text);
         $fh;
     };
@@ -180,8 +182,21 @@ sub _wrapsubs {
     if(exists($params{packages}) && ref($params{packages}) =~ /^ARRAY/) {
         my $wildcard_packages = [map { (my $foo = $_) =~ s/::.$//; $foo; } grep { /::\*$/ } @{$params{packages}}];
         my $nonwildcard_packages = [grep { $_ !~ /::\*$/ } @{$params{packages}}];
+
+        # wrap stuff that's not yet loaded
         _make_magic_inc(%params);
 
+        # wrap wildcards that *are* loaded
+        if(@{$wildcard_packages}) {
+            foreach my $loaded (map { (my $f = $_) =~ s!/!::!g; $f =~ s/\.pm$//; $f } keys %INC) {
+                my $pattern = '^('.join('|',
+                    map { (my $f = $_) =~ s/::\*$/::/; $f } @{$wildcard_packages}
+                ).')';
+                _wrapsubs(%params, packages => [$loaded]) if($loaded =~ /$pattern/);
+            }
+        }
+
+        # wrap non-wildcards that *are* loaded
         if($params{wrap_inherited}) {
             foreach my $package (@{$nonwildcard_packages}) {
                 # FIXME? does this work with 'use base'

@@ -3,7 +3,8 @@ use warnings;
 
 use lib 't/lib';
 
-# $SIG{__WARN__} = sub { die(@_); }
+# FIXME uncomment, and fix prototype problems
+# BEGIN { $SIG{__WARN__} = sub { die(@_) }; }
 
 use Test::More tests => 8;
 
