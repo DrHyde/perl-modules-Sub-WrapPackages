@@ -3,11 +3,11 @@ use warnings;
 
 package Sub::WrapPackages;
 
-use vars qw($VERSION);
+use vars qw($VERSION %ORIGINAL_SUBS);
 
-$VERSION = '1.3';
+$VERSION = '2.0';
 
-use Hook::LexWrap;
+%ORIGINAL_SUBS = ();
 
 =head1 NAME
 
@@ -31,64 +31,71 @@ subroutines in packages or around individual subs
             print "$_[0] returned $_[1]\n";
         };
 
+=head1 COMPATIBILITY
+
+While this module does broadly the same job as the 1.x versions did,
+the interface may have changed incompatibly.  Sorry.  Hopefully it'll
+be more maintainable and less crazily magical.
+
 =head1 DESCRIPTION
 
-This is mostly a wrapper around Damian Conway's Hook::LexWrap module.
-Please go and read the docs for that module now.  The differences are:
+This module installs pre- and post- execution subroutines for the
+subroutines you specify.  The pre-execution subroutine is passed the
+wrapped subroutine's name and all its arguments.  The post-execution
+subroutine is passed the wrapped sub's name and its results.
+
+The return values from the pre- and post- subs are ignored.
+
+Normal usage is to pass a bunch of parameters when the module is used.
+However, you can also call Sub::WrapPackages::wrapsubs with the same
+parameters.
+
+=head1 CAVEATS
+
+C<caller> breaks badly.
+
+=head1 PARAMETERS
 
 =over 4
 
-=item no exporting
-
-We don't export a wrap() function, instead preferring to do all the magic
-when you C<use> this module.  We just wrap named subroutines, no references.
-I didn't need that functionality so although it's probably available if
-you look at the source I haven't tested it.  Patches welcome!
-
-=item the subs and packages arrayrefs
+=item the subs arrayref
 
 In the synopsis above, you will see two named parameters, C<subs> and
-C<packages>.  Any subroutine mentioned in C<subs> will be wrapped.  Any
-packages mentioned in C<packages> will have all their subroutines wrapped,
-including any that they import.
-
+C<packages>.  Any subroutine mentioned in C<subs> will be wrapped.
 Any subroutines mentioned in 'subs' must already exist - ie their modules
-must be loaded - at the time you try to wrap them.  Otherwise the order in
-which modules are loaded doesn't matter due to Stunt Code.
+must be loaded - at the time you try to wrap them.
+
+=items the packages arrayref
+
+Any package mentioned here will have all its subroutines wrapped,
+including any that it imports at load-time.  Packages can be loaded
+in any order - they don't have to already be loaded for Sub::WrapPackages
+to work its magic.
+
+You can specify wildcard packages.  Anything ending in ::* is assumed
+to be such.  For example, if you specify Orchard::Tree::*, then that
+matches Orchard::Tree, Orchard::Tree::Pear, Orchard::Apple::KingstonBlack
+etc, but not - of course - Pine::Tree or My::Orchard::Tree.
 
 Note, however, that if a module exports a subroutine at load-time using
 C<import> then that sub will be wrapped in the exporting module but not in
 the importing module.  This is because import() runs before we get a chance
-to fiddle with things.  The code for deferred fiddlage isn't re-entrant.
-It's probably horribly fragile in all kinds of other ways too.
+to fiddle with things.  Sorry.
 
 =item wrap_inherited
 
 In conjunction with the C<packages> arrayref, this wraps all calls to
 inherited methods made through those packages.  If you call those
-methods directly in the superclass then they are not affected.
-
-=item parameters passed to your subs
-
-I threw Damian's ideas out of the window.  Instead, your pre-wrapper will
-be passed the wrapped subroutine's name, and all the parameters to be passed
-to it.  Who knows what will happen if you modify those params, I don't
-need that so haven't tested it.  Patches welcome!
-
-The post-wrapper will be passed the wrapped subroutine's name, and a single
-parameter for the return value(s) as in Damian's module.  Figuring out the
-difference between returning an array and returning a reference to an array
-is left as an exercise for the interested reader.
+methods directly in the superclass then they are not affected - unless
+they're wrapped in the superclass of course.
 
 =back
 
 =head1 BUGS
 
 Wrapped subroutines may cause perl 5.6.1, and maybe other versions, to
-segfault when called in void context.  I believe this is a bug in
-Hook::LexWrap.
-
-I say "patches welcome" a lot.
+segfault when called in void context.  At least, they did back when
+this was a thin layer around Hook::LexWrap.
 
 AUTOLOAD and DESTROY are not treated as being special.
 
@@ -124,7 +131,7 @@ fiddling with modules that haven't yet been loaded.
 
 sub import {
     shift;
-    _wrapsubs(@_) if(@_);
+    wrapsubs(@_) if(@_);
 }
 
 sub _subs_in_packages {
@@ -165,7 +172,7 @@ sub _make_magic_inc {
         my($code, $trailer) = ($1, $2);
         $text = $code.qq[
             ;
-            Sub::WrapPackages::_wrapsubs(
+            Sub::WrapPackages::wrapsubs(
                 %Sub::WrapPackages::params,
                 packages => [qw($module)]
             );
@@ -176,7 +183,7 @@ sub _make_magic_inc {
     };
 }
 
-sub _wrapsubs {
+sub wrapsubs {
     my %params = @_;
 
     if(exists($params{packages}) && ref($params{packages}) =~ /^ARRAY/) {
@@ -192,7 +199,7 @@ sub _wrapsubs {
                 my $pattern = '^('.join('|',
                     map { (my $f = $_) =~ s/::\*$/::/; $f } @{$wildcard_packages}
                 ).')';
-                _wrapsubs(%params, packages => [$loaded]) if($loaded =~ /$pattern/);
+                wrapsubs(%params, packages => [$loaded]) if($loaded =~ /$pattern/);
             }
         }
 
@@ -236,11 +243,22 @@ sub _wrapsubs {
     return undef if(!$params{pre} && !$params{post});
 
     foreach my $sub (@{$params{subs}}) {
-        Hook::LexWrap::wrap($sub, (($params{pre}) ?
-            (pre =>  sub { &{$params{pre}}($sub, @_[0..$#_-1]) }) : ()
-        ),(($params{post}) ?
-            (post => sub { &{$params{post}}($sub, $_[-1]) }) : ()
-        ));
+        next if(exists($ORIGINAL_SUBS{$sub}));
+
+        $ORIGINAL_SUBS{$sub} = \&{$sub};
+        my $imposter = sub {
+            my(@rval, $rval) = ();
+            $params{pre}->($sub, @_);
+            wantarray() ? @rval = $ORIGINAL_SUBS{$sub}->(@_)
+                        : $rval = $ORIGINAL_SUBS{$sub}->(@_);
+            $params{post}->($sub, wantarray() ? @rval : $rval);
+            return wantarray() ? @rval : $rval;
+        };
+        {
+            no strict 'refs';
+            no warnings 'redefine';
+            *{$sub} = $imposter;
+        };
     }
 }
 
