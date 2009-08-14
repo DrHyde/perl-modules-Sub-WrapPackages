@@ -67,7 +67,7 @@ C<packages>.  Any subroutine mentioned in C<subs> will be wrapped.
 Any subroutines mentioned in 'subs' must already exist - ie their modules
 must be loaded - at the time you try to wrap them.
 
-=items the packages arrayref
+=item the packages arrayref
 
 Any package mentioned here will have all its subroutines wrapped,
 including any that it imports at load-time.  Packages can be loaded
@@ -244,6 +244,8 @@ sub wrapsubs {
     }
 
     return undef if(!$params{pre} && !$params{post});
+    $params{pre} ||= sub {};
+    $params{post} ||= sub {};
 
     foreach my $sub (@{$params{subs}}) {
         next if(exists($ORIGINAL_SUBS{$sub}));
