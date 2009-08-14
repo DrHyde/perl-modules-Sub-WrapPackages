@@ -72,7 +72,8 @@ must be loaded - at the time you try to wrap them.
 Any package mentioned here will have all its subroutines wrapped,
 including any that it imports at load-time.  Packages can be loaded
 in any order - they don't have to already be loaded for Sub::WrapPackages
-to work its magic.
+to work its magic.  However, if after loading Sub::WrapPackages you
+mess around with @INC - eg with a late C<use lib> - all bets are off.
 
 You can specify wildcard packages.  Anything ending in ::* is assumed
 to be such.  For example, if you specify Orchard::Tree::*, then that

@@ -1,22 +1,17 @@
 #!/usr/bin/perl -w
 
+use strict;
+
 my $pre;
 my $post;
 
-use strict;
-
-use Test::More tests => 9;
+use Test::More tests => 10;
 
 use lib 't/lib'; use a;
 use Sub::WrapPackages (
     subs => [qw(a::a_scalar a::a_list a::a_context_sensitive)],
-    pre => sub {
-        $pre .= join(", ", @_);
-    },
-    post => sub {
-        $post .= join(", ", @_);
-        # $post .= 'a::a_scalar'.(ref($_[1]) =~ /^ARRAY/ ? join(', ', @{$_[1]}) : $_[1]);
-    }
+    pre => sub { $pre .= join(", ", @_); },
+    post => sub { $post .= join(", ", @_); }
 );
 
 my $r = a::a_scalar(1..3);
@@ -44,3 +39,12 @@ is_deeply(my $foo = a::a_context_sensitive(), [qw(in sub a_context_sensitive)],
     'wantarray() false in scalar context');
 is_deeply([my @foo = a::a_context_sensitive()], [qw(in sub a_context_sensitive)],
     'wantarray() true in list context');
+
+Sub::WrapPackages::wrapsubs(
+    subs => [qw(a::a_scalar a::a_list a::a_context_sensitive)],
+    pre => sub { $pre .= join(", ", @_); },
+    post => sub { $post .= join(", ", @_); }
+);
+$pre = '';
+$r = a::a_scalar(1..3);
+is($pre, 'a::a_scalar, 1, 2, 3', "subs can't be re-wrapped");

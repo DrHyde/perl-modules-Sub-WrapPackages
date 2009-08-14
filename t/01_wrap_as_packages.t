@@ -1,32 +1,30 @@
 #!/usr/bin/perl -w
 
-my $r;
-
 use strict;
-
-BEGIN { $| = 1; print "1..2\n"; }
+use Test::More tests => 4;
 
 use lib 't/lib'; use a;
+my $pre; my $post;
 use Sub::WrapPackages (
     packages => [qw(a)],
-    pre => sub {
-        $r .= join(", ", @_);
-    },
-    post => sub {
-        $r .= ref($_[1]) =~ /^ARRAY/ ? join(', ', @{$_[1]}) : $_[1];
-    }
+    pre => sub { $pre .= join(", ", @_); },
+    post => sub { $post .= join(", ", @_); }
 );
 
-my $test = 0;
+my $r = a::a_scalar(1..3);
 
-$r .= a::a_scalar(1..3);
+is($pre, 'a::a_scalar, 1, 2, 3',
+    'package pre-wrapper works');
+is($post, 'a::a_scalar, in sub a_scalar',
+    'package post-wrapper works');
+is($r, 'in sub a_scalar',
+    'package-wrapped sub returns correctly');
 
-print 'not ' unless($r eq 'a::a_scalar, 1, 2, 3in sub a_scalarin sub a_scalar');
-print 'ok '.(++$test)." returning scalar in scalar context\n";
-
-$r = '';
-my @r = a::a_list(4,6,8);
-
-print 'not ' unless(join('', @r) eq 'insuba_list' && $r eq 'a::a_list, 4, 6, 8in, sub, a_list');
-print 'ok '.(++$test)." returning array in array context\n";
-
+Sub::WrapPackages::wrapsubs(
+    packages => [qw(a)],
+    pre => sub { $pre .= join(", ", @_); },
+    post => sub { $post .= join(", ", @_); }
+);
+$pre = '';
+$r = a::a_scalar(1..3);
+is($pre, 'a::a_scalar, 1, 2, 3', "subs can't be re-wrapped via a package");

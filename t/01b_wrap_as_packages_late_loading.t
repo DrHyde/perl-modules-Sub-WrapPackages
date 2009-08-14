@@ -1,34 +1,22 @@
 #!/usr/bin/perl -w
 
-my $r;
-
 use strict;
+use Test::More tests => 3;
 
-BEGIN { $| = 1; print "1..2\n"; }
-
+my $pre; my $post;
 use lib 't/lib';
 use Sub::WrapPackages (
     packages => [qw(a)],
-    pre => sub {
-        $r .= join(", ", @_);
-    },
-    post => sub {
-        $r .= ref($_[1]) =~ /^ARRAY/ ? join(', ', @{$_[1]}) : $_[1];
-    }
+    pre => sub { $pre .= join(", ", @_); },
+    post => sub { $post .= join(", ", @_); }
 );
+use a;
 
-use a; # load after Sub::WrapPackages
+my $r = a::a_scalar(1..3);
 
-my $test = 0;
-
-$r .= a::a_scalar(1..3);
-
-print 'not ' unless($r eq 'a::a_scalar, 1, 2, 3in sub a_scalarin sub a_scalar');
-print 'ok '.(++$test)." returning scalar in scalar context\n";
-
-$r = '';
-my @r = a::a_list(4,6,8);
-
-print 'not ' unless(join('', @r) eq 'insuba_list' && $r eq 'a::a_list, 4, 6, 8in, sub, a_list');
-print 'ok '.(++$test)." returning array in array context\n";
-
+is($pre, 'a::a_scalar, 1, 2, 3',
+    'package pre-wrapper works');
+is($post, 'a::a_scalar, in sub a_scalar',
+    'package post-wrapper works');
+is($r, 'in sub a_scalar',
+    'package-wrapped sub returns correctly');
