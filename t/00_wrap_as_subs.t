@@ -5,11 +5,11 @@ my $post;
 
 use strict;
 
-use Test::More tests => 6;
+use Test::More tests => 9;
 
 use lib 't/lib'; use a;
 use Sub::WrapPackages (
-    subs => [qw(a::a_scalar a::a_list)],
+    subs => [qw(a::a_scalar a::a_list a::a_context_sensitive)],
     pre => sub {
         $pre .= join(", ", @_);
     },
@@ -38,3 +38,9 @@ is($post, 'a::a_list, in, sub, a_list',
 is(join(', ', @r), 'in, sub, a_list',
     'return list in list context');
 
+a::a_context_sensitive();
+ok($main::voidcontext, 'wantarray() undef in void context');
+is_deeply(my $foo = a::a_context_sensitive(), [qw(in sub a_context_sensitive)],
+    'wantarray() false in scalar context');
+is_deeply([my @foo = a::a_context_sensitive()], [qw(in sub a_context_sensitive)],
+    'wantarray() true in list context');

@@ -44,7 +44,9 @@ subroutines you specify.  The pre-execution subroutine is passed the
 wrapped subroutine's name and all its arguments.  The post-execution
 subroutine is passed the wrapped sub's name and its results.
 
-The return values from the pre- and post- subs are ignored.
+The return values from the pre- and post- subs are ignored, and they
+are called in the same context (void, scalar or list) as the calling
+code asked for.
 
 Normal usage is to pass a bunch of parameters when the module is used.
 However, you can also call Sub::WrapPackages::wrapsubs with the same
@@ -247,12 +249,22 @@ sub wrapsubs {
 
         $ORIGINAL_SUBS{$sub} = \&{$sub};
         my $imposter = sub {
-            my(@rval, $rval) = ();
-            $params{pre}->($sub, @_);
-            wantarray() ? @rval = $ORIGINAL_SUBS{$sub}->(@_)
-                        : $rval = $ORIGINAL_SUBS{$sub}->(@_);
-            $params{post}->($sub, wantarray() ? @rval : $rval);
-            return wantarray() ? @rval : $rval;
+            my(@r, $r) = ();
+            my $wa = wantarray();
+            if(!defined($wa)) {
+                $params{pre}->($sub, @_);
+                $ORIGINAL_SUBS{$sub}->(@_);
+                $params{post}->($sub);
+            } elsif($wa) {
+                 my @f = $params{pre}->($sub, @_);
+                 @r = $ORIGINAL_SUBS{$sub}->(@_);
+                 @f = $params{post}->($sub, @r);
+            } else {
+                 my $f = $params{pre}->($sub, @_);
+                 $r = $ORIGINAL_SUBS{$sub}->(@_);
+                 $f = $params{post}->($sub, $r);
+            }
+            return wantarray() ? @r : $r;
         };
         {
             no strict 'refs';

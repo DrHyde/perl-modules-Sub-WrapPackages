@@ -1,2 +1,3 @@
+Track what's created for inheritance; make pre/post aware
 Match prototypes
 Can we do something funky with AUTOLOAD?
