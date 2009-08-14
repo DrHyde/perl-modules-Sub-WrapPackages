@@ -25,3 +25,5 @@ t/lib/Module/With/Data/Segment.pm
 t/lib/Module/With/END/Segment.pm
 t/lib/Module/With/Both/Segments.pm
 t/02b_wrap_inherited_late_loading.t
+t/lib/Prototyped.pm
+t/06_prototypes.t

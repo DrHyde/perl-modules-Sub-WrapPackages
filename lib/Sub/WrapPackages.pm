@@ -4,6 +4,7 @@ use warnings;
 package Sub::WrapPackages;
 
 use vars qw($VERSION %ORIGINAL_SUBS);
+use Sub::Prototype ();
 
 $VERSION = '2.0';
 
@@ -40,7 +41,8 @@ be more maintainable and less crazily magical.
 =head1 DESCRIPTION
 
 This module installs pre- and post- execution subroutines for the
-subroutines you specify.  The pre-execution subroutine is passed the
+subroutines or packages you specify.i  The pre-execution subroutine
+is passed the
 wrapped subroutine's name and all its arguments.  The post-execution
 subroutine is passed the wrapped sub's name and its results.
 
@@ -57,6 +59,11 @@ parameters.
 C<caller> breaks badly.
 
 =head1 PARAMETERS
+
+Either pass parameters on loading the module, as above, or pass them
+to ...
+
+=head2 the wrapsubs subroutine
 
 =over 4
 
@@ -91,6 +98,10 @@ In conjunction with the C<packages> arrayref, this wraps all calls to
 inherited methods made through those packages.  If you call those
 methods directly in the superclass then they are not affected - unless
 they're wrapped in the superclass of course.
+
+=item pre and post
+
+References to the subroutines you want to use as wrappers.
 
 =back
 
@@ -209,7 +220,6 @@ sub wrapsubs {
         # wrap non-wildcards that *are* loaded
         if($params{wrap_inherited}) {
             foreach my $package (@{$nonwildcard_packages}) {
-                # FIXME? does this work with 'use base'
                 my @parents = eval '@'.$package.'::ISA';
 
                 # get inherited (but not over-ridden!) subs
@@ -226,6 +236,7 @@ sub wrapsubs {
                 # define them in $package using SUPER
                 foreach my $sub (@subs_to_define) {
                     no strict;
+                    # FIXME prototypes
                     *{$package."::$sub"} = eval "
                         sub {
                             package $package;
@@ -251,6 +262,7 @@ sub wrapsubs {
         next if(exists($ORIGINAL_SUBS{$sub}));
 
         $ORIGINAL_SUBS{$sub} = \&{$sub};
+        # my $imposter = sub(prototype($ORIGINAL_SUBS{$sub})) {
         my $imposter = sub {
             my(@r, $r) = ();
             my $wa = wantarray();
@@ -269,6 +281,9 @@ sub wrapsubs {
             }
             return wantarray() ? @r : $r;
         };
+        Sub::Prototype::set_prototype($imposter, prototype($ORIGINAL_SUBS{$sub}))
+            if(prototype($ORIGINAL_SUBS{$sub}));
+
         {
             no strict 'refs';
             no warnings 'redefine';
