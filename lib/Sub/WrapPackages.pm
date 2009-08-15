@@ -165,8 +165,6 @@ sub _subs_in_packages {
             push @subs, $package.$k if(defined(&{$v}));
         }
     }
-    use Data::Dumper;
-    print Dumper(\@subs);
     return @subs;
 }
 
