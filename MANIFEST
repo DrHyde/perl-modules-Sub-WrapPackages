@@ -27,4 +27,7 @@ t/lib/Prototyped.pm
 t/06_prototypes.t
 t/04_wrap_tree_of_packages.t
 t/04b_wrap_tree_of_packages_late_loading.t
-t/03b_wrap_inherited_in_same_file.t
+t/lib/c.pm
+t/02c_wrap_inherited_from_grandparent.t
+t/03b_wrap_inherited_in_same_file_late_loading.t
+t/07_use_lib.t

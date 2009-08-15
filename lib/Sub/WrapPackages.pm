@@ -3,8 +3,9 @@ use warnings;
 
 package Sub::WrapPackages;
 
-use vars qw($VERSION %ORIGINAL_SUBS);
+use vars qw($VERSION %ORIGINAL_SUBS @MAGICINCS);
 use Sub::Prototype ();
+use lib ();
 
 $VERSION = '2.0';
 
@@ -79,8 +80,7 @@ must be loaded - at the time you try to wrap them.
 Any package mentioned here will have all its subroutines wrapped,
 including any that it imports at load-time.  Packages can be loaded
 in any order - they don't have to already be loaded for Sub::WrapPackages
-to work its magic.  However, if after loading Sub::WrapPackages you
-mess around with @INC - eg with a late C<use lib> - all bets are off.
+to work its magic.
 
 You can specify wildcard packages.  Anything ending in ::* is assumed
 to be such.  For example, if you specify Orchard::Tree::*, then that
@@ -91,6 +91,13 @@ Note, however, that if a module exports a subroutine at load-time using
 C<import> then that sub will be wrapped in the exporting module but not in
 the importing module.  This is because import() runs before we get a chance
 to fiddle with things.  Sorry.
+
+Deferred wrapping of subs in packages that aren't yet loaded works
+via a subroutine inserted in @INC.  This means that if you mess around
+with @INC, eg by inserting a directoy at the beginning of the path, the
+magic might not get a chance to run.  If you C<use lib> to mess with
+@INC though, it should work, as I've over-ridden lib's import() method.
+That said, code this funky has no right to work.  Use with caution!
 
 =item wrap_inherited
 
@@ -166,7 +173,7 @@ sub _make_magic_inc {
     my $wildcard_packages = [map { s/::.//; $_; } grep { /::\*$/ } @{$params{packages}}];
     my $nonwildcard_packages = [grep { $_ !~ /::\*$/ } @{$params{packages}}];
 
-    unshift @INC, sub {
+    push @MAGICINCS, sub {
         my($me, $file) = @_;
         (my $module = $file) =~ s{/}{::}g;
         $module =~ s/\.pm//;
@@ -195,6 +202,13 @@ sub _make_magic_inc {
         open($fh, '<', \$text);
         $fh;
     };
+    unshift @INC, $MAGICINCS[-1];
+}
+
+sub _getparents {
+    my $package = shift;
+    my @parents = eval '@'.$package.'::ISA';
+    return @parents, (map { _getparents($_) } @parents);
 }
 
 sub wrapsubs {
@@ -220,7 +234,7 @@ sub wrapsubs {
         # wrap non-wildcards that are loaded
         if($params{wrap_inherited}) {
             foreach my $package (@{$nonwildcard_packages}) {
-                my @parents = eval '@'.$package.'::ISA';
+                my @parents = _getparents($package);
 
                 # get inherited (but not over-ridden!) subs
                 my %subs_in_package = map {
@@ -282,5 +296,21 @@ sub wrapsubs {
         };
     }
 }
+
+package lib;
+use strict; no strict 'refs';
+use warnings; no warnings 'redefine';
+
+my $originallibimport = \&{'lib::import'};
+my $newimport = sub {
+    $originallibimport->(@_);
+    my %magicincs = map { $_, 1 } @Sub::WrapPackages::MAGICINCS;
+    @INC = (
+        (grep { exists($magicincs{$_}); } @INC),
+        (grep { !exists($magicincs{$_}); } @INC)
+    );
+};
+
+*{'lib::import'} = $newimport;
 
 1;
