@@ -3,7 +3,7 @@ use warnings;
 
 package Sub::WrapPackages;
 
-use vars qw($VERSION %ORIGINAL_SUBS @MAGICINCS);
+use vars qw($VERSION %ORIGINAL_SUBS @MAGICINCS %INHERITED);
 use Sub::Prototype ();
 use lib ();
 
@@ -165,6 +165,8 @@ sub _subs_in_packages {
             push @subs, $package.$k if(defined(&{$v}));
         }
     }
+    use Data::Dumper;
+    print Dumper(\@subs);
     return @subs;
 }
 
@@ -249,8 +251,16 @@ sub wrapsubs {
 
                 # define them as copies of whatever they resolve to
                 foreach my $sub (@subs_to_define) {
-                    no strict 'refs';
-                    *{$package."::$sub"} = $package->can($sub);
+                    $INHERITED{$package."::$sub"} = $package->can($sub);
+                    eval qq{
+                        sub ${package}::$sub {
+                            \$Sub::WrapPackages::INHERITED{"${package}::$sub"}->(\@_)
+                        }
+                    };
+                    # only works on 5.10 - 5.8 doesn't notice this
+                    # in the symbol table next time we run
+                    # _subs_in_packages. BAD PERL
+                    # *{$package."::$sub"} = $package->can($sub);
                 }
             }
         }
