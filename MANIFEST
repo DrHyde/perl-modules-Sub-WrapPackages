@@ -13,10 +13,8 @@ t/lib/Banana.pm
 t/03_wrap_inherited_in_same_file.t
 t/pod-coverage.t
 t/pod.t
-t/04_wrap_tree_of_packages.t
 t/lib/Banana/Tree.pm
 t/01b_wrap_as_packages_late_loading.t
-t/04b_wrap_tree_of_packages_after_loading.t
 ARTISTIC.txt
 GPL2.txt
 t/lib/Orchard/Tree/Pear/Conference.pm
@@ -27,3 +25,6 @@ t/lib/Module/With/Both/Segments.pm
 t/02b_wrap_inherited_late_loading.t
 t/lib/Prototyped.pm
 t/06_prototypes.t
+t/04_wrap_tree_of_packages.t
+t/04b_wrap_tree_of_packages_late_loading.t
+t/03b_wrap_inherited_in_same_file.t
