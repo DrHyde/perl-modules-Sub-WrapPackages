@@ -204,10 +204,10 @@ sub wrapsubs {
         my $wildcard_packages = [map { (my $foo = $_) =~ s/::.$//; $foo; } grep { /::\*$/ } @{$params{packages}}];
         my $nonwildcard_packages = [grep { $_ !~ /::\*$/ } @{$params{packages}}];
 
-        # wrap stuff that's not yet loaded
+        # defer wrapping stuff that's not yet loaded
         _make_magic_inc(%params);
 
-        # wrap wildcards that *are* loaded
+        # wrap wildcards that are loaded
         if(@{$wildcard_packages}) {
             foreach my $loaded (map { (my $f = $_) =~ s!/!::!g; $f =~ s/\.pm$//; $f } keys %INC) {
                 my $pattern = '^('.join('|',
@@ -217,7 +217,7 @@ sub wrapsubs {
             }
         }
 
-        # wrap non-wildcards that *are* loaded
+        # wrap non-wildcards that are loaded
         if($params{wrap_inherited}) {
             foreach my $package (@{$nonwildcard_packages}) {
                 my @parents = eval '@'.$package.'::ISA';
@@ -233,19 +233,10 @@ sub wrapsubs {
                     s/.*:://; $_;
                 } _subs_in_packages(@parents);
 
-                # define them in $package using SUPER
+                # define them as copies of whatever they resolve to
                 foreach my $sub (@subs_to_define) {
-                    no strict;
-                    # FIXME prototypes
-                    *{$package."::$sub"} = eval "
-                        sub {
-                            package $package;
-                            my \$self = shift;
-                            \$self->SUPER::$sub(\@_);
-                        };
-                    ";
-                    eval 'package __PACKAGE__';
-                    # push @{$params{subs}}, $package."::$sub";
+                    no strict 'refs';
+                    *{$package."::$sub"} = $package->can($sub);
                 }
             }
         }
@@ -271,13 +262,13 @@ sub wrapsubs {
                 $ORIGINAL_SUBS{$sub}->(@_);
                 $params{post}->($sub);
             } elsif($wa) {
-                 my @f = $params{pre}->($sub, @_);
-                 @r = $ORIGINAL_SUBS{$sub}->(@_);
-                 @f = $params{post}->($sub, @r);
+                my @f = $params{pre}->($sub, @_);
+                @r = $ORIGINAL_SUBS{$sub}->(@_);
+                @f = $params{post}->($sub, @r);
             } else {
-                 my $f = $params{pre}->($sub, @_);
-                 $r = $ORIGINAL_SUBS{$sub}->(@_);
-                 $f = $params{post}->($sub, $r);
+                my $f = $params{pre}->($sub, @_);
+                $r = $ORIGINAL_SUBS{$sub}->(@_);
+                $f = $params{post}->($sub, $r);
             }
             return wantarray() ? @r : $r;
         };
