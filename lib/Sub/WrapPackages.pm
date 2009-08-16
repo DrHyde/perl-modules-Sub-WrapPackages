@@ -252,7 +252,7 @@ sub wrapsubs {
                     $INHERITED{$package."::$sub"} = $package->can($sub);
                     eval qq{
                         sub ${package}::$sub {
-                            \$Sub::WrapPackages::INHERITED{"${package}::$sub"}->(\@_)
+                            goto &{\$Sub::WrapPackages::INHERITED{"${package}::$sub"}};
                         }
                     };
                     # only works on 5.10 - 5.8 doesn't notice this
