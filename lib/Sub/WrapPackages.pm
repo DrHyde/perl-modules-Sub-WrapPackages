@@ -249,6 +249,7 @@ sub wrapsubs {
 
                 # define them as copies of whatever they resolve to
                 foreach my $sub (@subs_to_define) {
+                    next if(exists($INHERITED{$package."::$sub"}));
                     $INHERITED{$package."::$sub"} = $package->can($sub);
                     eval qq{
                         sub ${package}::$sub {
