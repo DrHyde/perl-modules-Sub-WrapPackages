@@ -31,3 +31,4 @@ t/lib/c.pm
 t/02c_wrap_inherited_from_grandparent.t
 t/03b_wrap_inherited_in_same_file_late_loading.t
 t/07_use_lib.t
+t/02d_wrap_inherited_from_grandparent_parent_also_wrapped.t
