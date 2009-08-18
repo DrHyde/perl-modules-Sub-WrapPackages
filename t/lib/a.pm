@@ -7,4 +7,11 @@ sub a_context_sensitive {
     my @rval = qw(in sub a_context_sensitive);
     wantarray() ? @rval : \@rval;
 }
+sub a_caller {
+    return caller(shift()) if(@_);
+    return caller();
+}
+sub a_caller_caller {
+    a_caller(@_);
+}
 1;

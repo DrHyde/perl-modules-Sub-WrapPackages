@@ -11,6 +11,20 @@ $VERSION = '2.0';
 
 %ORIGINAL_SUBS = ();
 
+*CORE::GLOBAL::caller = sub (;$) {
+    my ($height) = ($_[0]||0);
+    my $i=1;
+    my $name_cache;
+    while (1) {
+        my @caller = CORE::caller($i++) or return;
+        $caller[3] = $name_cache if $name_cache;
+        $name_cache = $caller[0] eq 'Sub::WrapPackages' ? $caller[3] : '';
+        next if $name_cache || $height-- != 0;
+        return wantarray ? @_ ? @caller : @caller[0..2] : $caller[0];
+    }
+};
+
+
 =head1 NAME
 
 Sub::WrapPackages - add pre- and post-execution wrappers around all the
@@ -148,6 +162,8 @@ a class and a subclass are both defined in the same file.
 Thanks to Dagfinn Ilmari Mannsaker for help with the craziness for
 fiddling with modules that haven't yet been loaded.
 
+Magic to make caller() work borrowed from Hook::LexWrap by Damian Conway.
+
 =cut
 
 sub import {
@@ -276,7 +292,6 @@ sub wrapsubs {
         next if(exists($ORIGINAL_SUBS{$sub}));
 
         $ORIGINAL_SUBS{$sub} = \&{$sub};
-        # my $imposter = sub(prototype($ORIGINAL_SUBS{$sub})) {
         my $imposter = sub {
             my(@r, $r) = ();
             my $wa = wantarray();
