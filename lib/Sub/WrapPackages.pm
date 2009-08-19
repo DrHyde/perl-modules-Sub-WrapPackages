@@ -205,7 +205,7 @@ sub _make_magic_inc {
         close($fh);
         %Sub::WrapPackages::params = %params;
 
-        $text =~ /(.*?)(__DATA__|__END__|$)/s;
+        $text =~ /(.*?)(__DATA__.*|__END__.*|$)/s;
         my($code, $trailer) = ($1, $2);
         $text = $code.qq[
             ;
@@ -214,7 +214,7 @@ sub _make_magic_inc {
                 packages => [qw($module)]
             );
             1;
-        ].$trailer;
+        ]."\n$trailer";
         open($fh, '<', \$text);
         $fh;
     };

@@ -1,1 +1,4 @@
+What if b inherits from a, a::foo is wrapped, and then
+  b::* are wrapped with wrap_inherited?
+
 Can we do something funky with AUTOLOAD?
