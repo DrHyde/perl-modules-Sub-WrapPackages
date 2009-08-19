@@ -11,18 +11,20 @@ $VERSION = '2.0';
 
 %ORIGINAL_SUBS = ();
 
-*CORE::GLOBAL::caller = sub (;$) {
-    my ($height) = ($_[0]||0);
-    my $i=1;
-    my $name_cache;
-    while (1) {
-        my @caller = CORE::caller($i++) or return;
-        $caller[3] = $name_cache if $name_cache;
-        $name_cache = $caller[0] eq 'Sub::WrapPackages' ? $caller[3] : '';
-        next if $name_cache || $height-- != 0;
-        return wantarray ? @_ ? @caller : @caller[0..2] : $caller[0];
-    }
-};
+use Devel::Caller::IgnoreNamespaces;
+Devel::Caller::IgnoreNamespaces::register(__PACKAGE__);
+# *CORE::GLOBAL::caller = sub (;$) {
+#     my ($height) = ($_[0]||0);
+#     my $i=1;
+#     my $name_cache;
+#     while (1) {
+#         my @caller = CORE::caller($i++) or return;
+#         $caller[3] = $name_cache if $name_cache;
+#         $name_cache = $caller[0] eq 'Sub::WrapPackages' ? $caller[3] : '';
+#         next if $name_cache || $height-- != 0;
+#         return wantarray ? @_ ? @caller : @caller[0..2] : $caller[0];
+#     }
+# };
 
 
 =head1 NAME

@@ -4,6 +4,7 @@ WriteMakefile(
     VERSION_FROM => 'lib/Sub/WrapPackages.pm',
     PREREQ_PM    => {
         'Sub::Prototype' => 0.02,
+        'Devel::Caller::IgnoreNamespaces' => 0,
     }
 );
 
