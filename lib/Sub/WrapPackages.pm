@@ -1,6 +1,8 @@
 use strict;
 use warnings;
 
+use SUPER;
+
 package Sub::WrapPackages;
 
 use vars qw($VERSION %ORIGINAL_SUBS @MAGICINCS %INHERITED);
@@ -11,20 +13,9 @@ $VERSION = '2.0';
 
 %ORIGINAL_SUBS = ();
 
-use Devel::Caller::IgnoreNamespaces;
-Devel::Caller::IgnoreNamespaces::register(__PACKAGE__);
-# *CORE::GLOBAL::caller = sub (;$) {
-#     my ($height) = ($_[0]||0);
-#     my $i=1;
-#     my $name_cache;
-#     while (1) {
-#         my @caller = CORE::caller($i++) or return;
-#         $caller[3] = $name_cache if $name_cache;
-#         $name_cache = $caller[0] eq 'Sub::WrapPackages' ? $caller[3] : '';
-#         next if $name_cache || $height-- != 0;
-#         return wantarray ? @_ ? @caller : @caller[0..2] : $caller[0];
-#     }
-# };
+use Sub::Uplevel;
+# use Devel::Caller::IgnoreNamespaces;
+# Devel::Caller::IgnoreNamespaces::register(__PACKAGE__);
 
 
 =head1 NAME
@@ -271,9 +262,11 @@ sub wrapsubs {
                     $INHERITED{$package."::$sub"} = $package->can($sub);
                     eval qq{
                         sub ${package}::$sub {
+			    # goto &{\$_[0]->super('$sub')};
                             goto &{\$Sub::WrapPackages::INHERITED{"${package}::$sub"}};
                         }
                     };
+		    die($@) if($@);
                     # only works on 5.10 - 5.8 doesn't notice this
                     # in the symbol table next time we run
                     # _subs_in_packages. BAD PERL
@@ -299,15 +292,15 @@ sub wrapsubs {
             my $wa = wantarray();
             if(!defined($wa)) {
                 $params{pre}->($sub, @_);
-                $ORIGINAL_SUBS{$sub}->(@_);
+                uplevel(1, $ORIGINAL_SUBS{$sub}, @_);
                 $params{post}->($sub);
             } elsif($wa) {
                 my @f = $params{pre}->($sub, @_);
-                @r = $ORIGINAL_SUBS{$sub}->(@_);
+                @r = uplevel(1, $ORIGINAL_SUBS{$sub}, @_);
                 @f = $params{post}->($sub, @r);
             } else {
                 my $f = $params{pre}->($sub, @_);
-                $r = $ORIGINAL_SUBS{$sub}->(@_);
+                $r = uplevel(1, $ORIGINAL_SUBS{$sub}, @_);
                 $f = $params{post}->($sub, $r);
             }
             return wantarray() ? @r : $r;
