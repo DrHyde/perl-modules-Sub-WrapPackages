@@ -1,22 +1,28 @@
 use strict;
 use warnings;
 
-use SUPER;
+use Data::Dumper;
 
 package Sub::WrapPackages;
 
-use vars qw($VERSION %ORIGINAL_SUBS @MAGICINCS %INHERITED);
+use vars '$VERSION';
+use vars '%ORIGINAL_SUBS'; # coderefs of what we're wrapping, keyed
+                           #   by package::sub
+use vars '@MAGICINCS';     # list of magic INC subs, used by lib.pm hack
+use vars '%INHERITED';     # coderefs of inherited methods (before proxies
+                           #   installed), keys by package::sub
+use vars '%WRAPPED_BY_WRAPPER'; # coderefs of original subs, keyed by
+                                #   stringified coderef of wrapper
+use vars '%WRAPPER_BY_WRAPPED'; # coderefs of wrapper subs, keyed by
+                                #   stringified coderef of original sub
 use Sub::Prototype ();
-use lib ();
-
-$VERSION = '2.0';
-
-%ORIGINAL_SUBS = ();
-
 use Sub::Uplevel;
 # use Devel::Caller::IgnoreNamespaces;
 # Devel::Caller::IgnoreNamespaces::register(__PACKAGE__);
 
+use lib ();
+
+$VERSION = '2.0';
 
 =head1 NAME
 
@@ -256,21 +262,24 @@ sub wrapsubs {
                     s/.*:://; $_;
                 } _subs_in_packages(@parents);
 
-                # define them as copies of whatever they resolve to
+                # define proxy method that just does a goto to get
+                # to the right place.  We then later wrap the proxy
                 foreach my $sub (@subs_to_define) {
                     next if(exists($INHERITED{$package."::$sub"}));
                     $INHERITED{$package."::$sub"} = $package->can($sub);
+                    # if the inherited method is already wrapped,
+                    #   point this proxy at the original method
+                    #   so we don't wrap a wrapper
+                    if(exists($WRAPPED_BY_WRAPPER{$INHERITED{$package."::$sub"}})) {
+                        $INHERITED{$package."::$sub"} =
+                            $WRAPPED_BY_WRAPPER{$INHERITED{$package."::$sub"}};
+                    }
                     eval qq{
                         sub ${package}::$sub {
-			    # goto &{\$_[0]->super('$sub')};
                             goto &{\$Sub::WrapPackages::INHERITED{"${package}::$sub"}};
                         }
                     };
-		    die($@) if($@);
-                    # only works on 5.10 - 5.8 doesn't notice this
-                    # in the symbol table next time we run
-                    # _subs_in_packages. BAD PERL
-                    # *{$package."::$sub"} = $package->can($sub);
+                    die($@) if($@);
                 }
             }
         }
@@ -311,6 +320,9 @@ sub wrapsubs {
         {
             no strict 'refs';
             no warnings 'redefine';
+            $WRAPPED_BY_WRAPPER{$imposter} = $ORIGINAL_SUBS{$sub};
+            $WRAPPER_BY_WRAPPED{$ORIGINAL_SUBS{$sub}} = $imposter;
+
             *{$sub} = $imposter;
         };
     }
