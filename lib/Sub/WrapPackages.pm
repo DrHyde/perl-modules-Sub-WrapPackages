@@ -297,6 +297,7 @@ sub wrapsubs {
 
         $ORIGINAL_SUBS{$sub} = \&{$sub};
         my $imposter = sub {
+            local *__ANON__ = $sub;
             my(@r, $r) = ();
             my $wa = wantarray();
             if(!defined($wa)) {
