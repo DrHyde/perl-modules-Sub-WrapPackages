@@ -150,18 +150,21 @@ This software is free-as-in-speech software, and may be used, distributed, and m
 
 =head1 THANKS TO
 
-Thanks also to Adam Trickett who thought this was a jolly good idea,
-Tom Hukins who prompted me to add support for inherited methods, and Ed
-Summers, whose code for figgering out what functions a package contains
-I borrowed out of L<Acme::Voodoo>.
-
 Thanks to Tom Hukins for sending in a test case for the situation when
 a class and a subclass are both defined in the same file.
 
 Thanks to Dagfinn Ilmari Mannsaker for help with the craziness for
 fiddling with modules that haven't yet been loaded.
 
+Thanks to Lee Johnson for reporting a bug caused by perl 5.10's
+constant.pm being Far Too Clever, and providing a patch and test.
+
 Magic to make caller() work borrowed from Hook::LexWrap by Damian Conway.
+
+Thanks also to Adam Trickett who thought this was a jolly good idea,
+Tom Hukins who prompted me to add support for inherited methods, and Ed
+Summers, whose code for figgering out what functions a package contains
+I borrowed out of L<Acme::Voodoo>.
 
 =cut
 
@@ -177,7 +180,7 @@ sub _subs_in_packages {
     foreach my $package (@targets) {
         no strict;
         while(my($k, $v) = each(%{$package})) {
-            push @subs, $package.$k if(defined(&{$v}));
+            push @subs, $package.$k if(ref($v) ne 'SCALAR' && defined(&{$v}));
         }
     }
     return @subs;
