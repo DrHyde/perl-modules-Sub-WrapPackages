@@ -36,3 +36,5 @@ t/pod.t
 t/08_caller.t
 t/02f_point_inh_proxies_at_original.t
 t/coverage.sh
+t/lib/breakuseconstant.pm
+t/09_5.10_use_constant.t
