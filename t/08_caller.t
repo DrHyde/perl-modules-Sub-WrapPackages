@@ -14,6 +14,7 @@ my @caller_witharg0 = a::a_caller(0);
 my @caller_caller_noargs = a::a_caller_caller();
 my @caller_caller_witharg0 = a::a_caller_caller(0);
 my @caller_caller_witharg1 = a::a_caller_caller(1);
+my @caller_caller_witharg2 = a::a_caller_caller(2);
 
 # wrap after getting correct data to compare with
 Sub::WrapPackages::wrapsubs(
@@ -46,3 +47,8 @@ my @wrapped_caller_caller_witharg1 = a::a_caller_caller(1);
 $wrapped_caller_caller_witharg1[2] = $caller_caller_witharg1[2];
 is_deeply(\@wrapped_caller_caller_witharg1, \@caller_caller_witharg1,
     "foo(caller(1)) works");
+
+my @wrapped_caller_caller_witharg2 = a::a_caller_caller(2);
+$wrapped_caller_caller_witharg2[2] = $caller_caller_witharg2[2];
+is_deeply(\@wrapped_caller_caller_witharg2, \@caller_caller_witharg2,
+    "foo(caller(2)) works");

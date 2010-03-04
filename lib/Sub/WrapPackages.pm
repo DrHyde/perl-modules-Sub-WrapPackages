@@ -68,10 +68,6 @@ Normal usage is to pass a bunch of parameters when the module is used.
 However, you can also call Sub::WrapPackages::wrapsubs with the same
 parameters.
 
-=head1 CAVEATS
-
-C<caller> breaks badly.
-
 =head1 PARAMETERS
 
 Either pass parameters on loading the module, as above, or pass them

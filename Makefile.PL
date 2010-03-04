@@ -5,7 +5,7 @@ WriteMakefile(
     PREREQ_PM    => {
         'Sub::Prototype' => 0.02,
         'Sub::Uplevel'   => 0.22,
-        'Devel::Caller::IgnoreNamespaces' => 0,
+        # 'Devel::Caller::IgnoreNamespaces' => 0,
     }
 );
 
