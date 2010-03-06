@@ -49,12 +49,13 @@ subroutines in packages or around individual subs
 
 While this module does broadly the same job as the 1.x versions did,
 the interface may have changed incompatibly.  Sorry.  Hopefully it'll
-be more maintainable and less crazily magical.
+be more maintainable and slightly less crazily magical.  Also, caller()
+should now work properly, ignoring wrappings.
 
 =head1 DESCRIPTION
 
 This module installs pre- and post- execution subroutines for the
-subroutines or packages you specify.i  The pre-execution subroutine
+subroutines or packages you specify.  The pre-execution subroutine
 is passed the
 wrapped subroutine's name and all its arguments.  The post-execution
 subroutine is passed the wrapped sub's name and its results.
@@ -122,11 +123,17 @@ References to the subroutines you want to use as wrappers.
 
 =head1 BUGS
 
-Wrapped subroutines may cause perl 5.6.1, and maybe other versions, to
-segfault when called in void context.  At least, they did back when
-this was a thin layer around Hook::LexWrap.
+AUTOLOAD and DESTROY are not treated as being special.  I'm not sure
+whether they should be or not.
 
-AUTOLOAD and DESTROY are not treated as being special.
+If you use wrap_inherited but classes change their inheritance tree at
+run-time, then very bad things will happen. VERY BAD THINGS.  So don't
+do that.  You shouldn't be doing that anyway.  Mind you, you shouldn't
+be doing the things that this module does either.  BAD PROGRAMMER, NO
+BIKKIT!
+
+If you find any other lurking horrors, please report them using
+L<https://rt.cpan.org/Public/Dist/Display.html?Name=Sub-WrapPackages>.
 
 =head1 FEEDBACK
 
@@ -146,16 +153,18 @@ This software is free-as-in-speech software, and may be used, distributed, and m
 =head1 THANKS TO
 
 Thanks to Tom Hukins for sending in a test case for the situation when
-a class and a subclass are both defined in the same file.
+a class and a subclass are both defined in the same file, and for
+prompting me to support inherited methods;
 
-Thanks to Dagfinn Ilmari Mannsaker for help with the craziness for
-fiddling with modules that haven't yet been loaded.
+to Dagfinn Ilmari Mannsaker for help with the craziness for
+fiddling with modules that haven't yet been loaded;
 
-Thanks to Lee Johnson for reporting a bug caused by perl 5.10's
-constant.pm being Far Too Clever, and providing a patch and test.
+to Lee Johnson for reporting a bug caused by perl 5.10's
+constant.pm being Far Too Clever, and providing a patch and test;
 
-Thanks also to Adam Trickett who thought this was a jolly good idea,
-Tom Hukins who prompted me to add support for inherited methods, and Ed
+to Adam Trickett who thought this was a jolly good idea;
+
+and to Ed
 Summers, whose code for figgering out what functions a package contains
 I borrowed out of L<Acme::Voodoo>.
 
