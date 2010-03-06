@@ -25,13 +25,15 @@ Sub::WrapPackages::wrapsubs(
 my @wrapped_caller_noargs = a::a_caller();
 $wrapped_caller_noargs[2] = $caller_noargs[2];
 is($pre, 'a::a_caller', "pre works for no args");
-is_deeply(\@wrapped_caller_noargs, \@caller_noargs, "wrapped -> caller() works");
+is_deeply(\@wrapped_caller_noargs, \@caller_noargs,
+    "wrapped -> caller() works");
 
 $pre = '';
 my @wrapped_caller_witharg0 = a::a_caller(0);
 $wrapped_caller_witharg0[2] = $caller_witharg0[2];
 is($pre, 'a::a_caller, 0', "pre works with an arg");
-is_deeply(\@wrapped_caller_witharg0, \@caller_witharg0, "wrapped -> caller(0) works");
+is_deeply(\@wrapped_caller_witharg0, \@caller_witharg0,
+    "wrapped -> caller(0) works");
 
 my @wrapped_caller_caller_noargs = a::a_caller_caller();
 $wrapped_caller_caller_noargs[2] = $caller_caller_noargs[2];
@@ -50,5 +52,6 @@ is_deeply(\@wrapped_caller_caller_witharg1, \@caller_caller_witharg1,
 
 my @wrapped_caller_caller_witharg2 = a::a_caller_caller(2);
 $wrapped_caller_caller_witharg2[2] = $caller_caller_witharg2[2];
+use Data::Dumper;$Data::Dumper::Indent=1;
 is_deeply(\@wrapped_caller_caller_witharg2, \@caller_caller_witharg2,
-    "wrapped -> wrapped -> caller(2) works");
+    "wrapped -> wrapped -> caller(2) works") || print STDERR Dumper(\@wrapped_caller_caller_witharg2, \@caller_caller_witharg2);

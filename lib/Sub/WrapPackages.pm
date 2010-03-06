@@ -16,9 +16,8 @@ use vars '%WRAPPED_BY_WRAPPER'; # coderefs of original subs, keyed by
 use vars '%WRAPPER_BY_WRAPPED'; # coderefs of wrapper subs, keyed by
                                 #   stringified coderef of original sub
 use Sub::Prototype ();
-use Sub::Uplevel;
-# use Devel::Caller::IgnoreNamespaces;
-# Devel::Caller::IgnoreNamespaces::register(__PACKAGE__);
+use Devel::Caller::IgnoreNamespaces;
+Devel::Caller::IgnoreNamespaces::register(__PACKAGE__);
 
 use lib ();
 
@@ -154,8 +153,6 @@ fiddling with modules that haven't yet been loaded.
 
 Thanks to Lee Johnson for reporting a bug caused by perl 5.10's
 constant.pm being Far Too Clever, and providing a patch and test.
-
-Magic to make caller() work borrowed from Hook::LexWrap by Damian Conway.
 
 Thanks also to Adam Trickett who thought this was a jolly good idea,
 Tom Hukins who prompted me to add support for inherited methods, and Ed
@@ -301,15 +298,15 @@ sub wrapsubs {
             my $wa = wantarray();
             if(!defined($wa)) {
                 $params{pre}->($sub, @_);
-                uplevel(1, $ORIGINAL_SUBS{$sub}, @_);
+                $ORIGINAL_SUBS{$sub}->(@_);
                 $params{post}->($sub);
             } elsif($wa) {
                 my @f = $params{pre}->($sub, @_);
-                @r = uplevel(1, $ORIGINAL_SUBS{$sub}, @_);
+                @r = $ORIGINAL_SUBS{$sub}->(@_);
                 @f = $params{post}->($sub, @r);
             } else {
                 my $f = $params{pre}->($sub, @_);
-                $r = uplevel(1, $ORIGINAL_SUBS{$sub}, @_);
+                $r = $ORIGINAL_SUBS{$sub}->(@_);
                 $f = $params{post}->($sub, $r);
             }
             return wantarray() ? @r : $r;
