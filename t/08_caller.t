@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Test::More tests => 7;
+use Test::More tests => 8;
 
 my $pre;
 
@@ -51,7 +51,6 @@ is_deeply(\@wrapped_caller_caller_witharg1, \@caller_caller_witharg1,
     "wrapped -> wrapped -> caller(1) works");
 
 my @wrapped_caller_caller_witharg2 = a::a_caller_caller(2);
-$wrapped_caller_caller_witharg2[2] = $caller_caller_witharg2[2];
-use Data::Dumper;$Data::Dumper::Indent=1;
+# expect an empty list here, so no munging!
 is_deeply(\@wrapped_caller_caller_witharg2, \@caller_caller_witharg2,
-    "wrapped -> wrapped -> caller(2) works") || print STDERR Dumper(\@wrapped_caller_caller_witharg2, \@caller_caller_witharg2);
+    "wrapped -> wrapped -> caller(2) works");
