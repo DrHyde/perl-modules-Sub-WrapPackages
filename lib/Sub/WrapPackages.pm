@@ -1,8 +1,6 @@
 use strict;
 use warnings;
 
-use Data::Dumper;
-
 package Sub::WrapPackages;
 
 use vars '$VERSION';
@@ -19,9 +17,12 @@ use Sub::Prototype ();
 use Devel::Caller::IgnoreNamespaces;
 Devel::Caller::IgnoreNamespaces::register(__PACKAGE__);
 
+use Data::Dumper;
+$Data::Dumper::Deparse = 1;
+
 use lib ();
 
-$VERSION = '2.0';
+$VERSION = '2.01';
 
 =head1 NAME
 
@@ -119,6 +120,11 @@ they're wrapped in the superclass of course.
 
 References to the subroutines you want to use as wrappers.
 
+=item debug
+
+This exists, but probably isn't of much use unless you want to hack on
+Sub::WrapPackage's guts.
+
 =back
 
 =head1 BUGS
@@ -190,7 +196,7 @@ sub _subs_in_packages {
 
 sub _make_magic_inc {
     my %params = @_;
-    my $wildcard_packages = [map { s/::.//; $_; } grep { /::\*$/ } @{$params{packages}}];
+    my $wildcard_packages = [map { (my $p = $_) =~ s/::.//; $p; } grep { /::\*$/ } @{$params{packages}}];
     my $nonwildcard_packages = [grep { $_ !~ /::\*$/ } @{$params{packages}}];
 
     push @MAGICINCS, sub {
@@ -207,7 +213,12 @@ sub _make_magic_inc {
         open(my $fh, $files[0]) || die("Can't locate $file in \@INC\n");
         my $text = <$fh>;
         close($fh);
-        %Sub::WrapPackages::params = %params;
+
+        if(!%Sub::WrapPackages::params) {
+          print STDERR "Setting \%Sub::WrapPackages::params\n" if($params{debug});
+          print STDERR Dumper(\%params) if($params{debug});
+          %Sub::WrapPackages::params = %params;
+        }
 
         $text =~ /(.*?)(__DATA__.*|__END__.*|$)/s;
         my($code, $trailer) = ($1, $2);
@@ -246,8 +257,11 @@ sub wrapsubs {
             foreach my $loaded (map { (my $f = $_) =~ s!/!::!g; $f =~ s/\.pm$//; $f } keys %INC) {
                 my $pattern = '^('.join('|',
                     map { (my $f = $_) =~ s/::\*$/::/; $f } @{$wildcard_packages}
-                ).')';
-                wrapsubs(%params, packages => [$loaded]) if($loaded =~ /$pattern/);
+                ).')(::|$)';
+                if($loaded =~ /$pattern/) {
+                  print STDERR "found loaded wildcard $loaded - matches $pattern\n" if($params{debug});
+                  wrapsubs(%params, packages => [$loaded]);
+                }
             }
         }
 
@@ -285,6 +299,7 @@ sub wrapsubs {
                         }
                     };
                     die($@) if($@);
+                    print STDERR "created stub ${package}::$sub for inherited method\n" if($params{debug});
                 }
             }
         }
@@ -330,6 +345,7 @@ sub wrapsubs {
             $WRAPPER_BY_WRAPPED{$ORIGINAL_SUBS{$sub}} = $imposter;
 
             *{$sub} = $imposter;
+            print STDERR "wrapped $sub\n" if($params{debug});
         };
     }
 }
