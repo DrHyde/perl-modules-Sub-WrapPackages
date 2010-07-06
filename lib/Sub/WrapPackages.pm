@@ -38,6 +38,8 @@ subroutines in packages or around individual subs
         wrap_inherited => 1,                # and wrap any methods
                                             #   inherited by Foo, Bar, or
                                             #   Baz::*
+        except   => qr/::w[oi]bble$/,       # but don't wrap any sub called
+                                            #   wibble or wobble
         pre      => sub {
             print "called $_[0] with params ".
               join(', ', @_[1..$#_])."\n";
@@ -119,6 +121,11 @@ they're wrapped in the superclass of course.
 =item pre and post
 
 References to the subroutines you want to use as wrappers.
+
+=item except
+
+A regex, any subroutine whose fully-qualified name (ie including the package
+name) matches this will not be wrapped.
 
 =item debug
 
@@ -311,7 +318,10 @@ sub wrapsubs {
     $params{post} ||= sub {};
 
     foreach my $sub (@{$params{subs}}) {
-        next if(exists($ORIGINAL_SUBS{$sub}));
+        next if(
+          (exists($params{except}) && $sub =~ $params{except}) ||
+          exists($ORIGINAL_SUBS{$sub})
+        );
 
         $ORIGINAL_SUBS{$sub} = \&{$sub};
         my $imposter = sub {

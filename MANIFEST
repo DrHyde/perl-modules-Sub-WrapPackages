@@ -39,3 +39,4 @@ t/coverage.sh
 t/lib/breakuseconstant.pm
 t/09_5.10_use_constant.t
 t/10_prototypes.t
+t/11_except.t

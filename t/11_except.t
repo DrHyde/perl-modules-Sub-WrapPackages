@@ -3,10 +3,11 @@ use warnings;
 
 use lib 't/lib';
 
-use Test::More tests => 8;
+use Test::More tests => 6;
 
 use Sub::WrapPackages (
     packages => [qw(Banana::Tree Orchard::*)],
+    except   => qr/(::foo)$/,
     pre      => sub {
         ok(1, "$_[0] pre-wrapper")
     },
