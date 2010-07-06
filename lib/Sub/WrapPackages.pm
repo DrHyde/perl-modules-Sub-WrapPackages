@@ -196,7 +196,7 @@ sub _subs_in_packages {
 
 sub _make_magic_inc {
     my %params = @_;
-    my $wildcard_packages = [map { (my $p = $_) =~ s/::.//; $p; } grep { /::\*$/ } @{$params{packages}}];
+    my $wildcard_packages = [map { (my $p = $_) =~ s/::.$//; $p; } grep { /::\*$/ } @{$params{packages}}];
     my $nonwildcard_packages = [grep { $_ !~ /::\*$/ } @{$params{packages}}];
 
     push @MAGICINCS, sub {
@@ -255,9 +255,7 @@ sub wrapsubs {
         # wrap wildcards that are loaded
         if(@{$wildcard_packages}) {
             foreach my $loaded (map { (my $f = $_) =~ s!/!::!g; $f =~ s/\.pm$//; $f } keys %INC) {
-                my $pattern = '^('.join('|',
-                    map { (my $f = $_) =~ s/::\*$/::/; $f } @{$wildcard_packages}
-                ).')(::|$)';
+                my $pattern = '^('.join('|', @{$wildcard_packages}).')(::|$)';
                 if($loaded =~ /$pattern/) {
                   print STDERR "found loaded wildcard $loaded - matches $pattern\n" if($params{debug});
                   wrapsubs(%params, packages => [$loaded]);
