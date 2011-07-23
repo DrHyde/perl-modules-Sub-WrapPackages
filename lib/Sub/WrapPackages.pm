@@ -155,7 +155,7 @@ criticism, are welcome.  Please email me.
 
 =head1 SOURCE CODE REPOSITORY
 
-L<http://www.cantrell.org.uk/cgit/cgit.cgi/perlmodules/>
+L<git://github.com/DrHyde/perl-modules-Sub-WrapPackages.git>
 
 =head1 COPYRIGHT and LICENCE
 
