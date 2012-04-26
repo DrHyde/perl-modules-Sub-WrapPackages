@@ -1,6 +1,12 @@
 use ExtUtils::MakeMaker;
 WriteMakefile(
     NAME         => 'Sub::WrapPackages',
+    META_MERGE => {
+        license => 'other',
+        resource => {
+	    repository => 'https://github.com/DrHyde/perl-modules-Sub-WrapPackages'
+        }
+    },
     VERSION_FROM => 'lib/Sub/WrapPackages.pm',
     PREREQ_PM    => {
         'Sub::Prototype' => 0.02,
