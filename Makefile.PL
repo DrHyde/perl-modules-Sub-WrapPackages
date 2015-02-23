@@ -3,8 +3,9 @@ WriteMakefile(
     NAME         => 'Sub::WrapPackages',
     META_MERGE => {
         license => 'other',
-        resource => {
-	    repository => 'https://github.com/DrHyde/perl-modules-Sub-WrapPackages'
+        resources => {
+	    repository => 'https://github.com/DrHyde/perl-modules-Sub-WrapPackages',
+	    bugtracker => 'https://github.com/DrHyde/perl-modules-Sub-WrapPackages/issues'
         }
     },
     VERSION_FROM => 'lib/Sub/WrapPackages.pm',
