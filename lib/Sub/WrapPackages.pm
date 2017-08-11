@@ -358,7 +358,8 @@ sub wrapsubs {
     }
 }
 
-package lib;
+package # break up the package declaration so that metacpan doesn't whine
+    lib;
 use strict; no strict 'refs';
 use warnings; no warnings 'redefine';
 
