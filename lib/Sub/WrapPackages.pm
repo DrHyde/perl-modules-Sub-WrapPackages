@@ -300,12 +300,13 @@ sub wrapsubs {
                         $INHERITED{$package."::$sub"} =
                             $WRAPPED_BY_WRAPPER{$INHERITED{$package."::$sub"}};
                     }
-                    eval qq{
-                        sub ${package}::$sub {
-                            goto &{\$Sub::WrapPackages::INHERITED{"${package}::$sub"}};
-                        }
-                    };
-                    die($@) if($@);
+                    Package::Stash->new( $package )->add_symbol( '&'.$sub => sub {
+                        my $inherited = $Sub::WrapPackages::INHERITED{
+                            join '::', $package, $sub
+                        };
+                        goto &$inherited;
+                    });
+                    die $@ if $@;
                     print STDERR "created stub ${package}::$sub for inherited method\n" if($params{debug});
                 }
             }
