@@ -186,7 +186,7 @@ and to Yanick Champoux for numerous readability improvements.
 
 sub import {
     shift;
-    wrapsubs(@_) if(@_);
+    wrapsubs(@_);
 }
 
 sub _subs_in_packages {
