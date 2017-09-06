@@ -223,8 +223,8 @@ sub _make_magic_inc {
         close($fh);
 
         if(!%Sub::WrapPackages::params) {
-          print STDERR "Setting \%Sub::WrapPackages::params\n" if($params{debug});
-          print STDERR Dumper(\%params) if($params{debug});
+          print STDERR "Setting \%Sub::WrapPackages::params\n", Dumper(\%params)
+            if($params{debug});
           %Sub::WrapPackages::params = %params;
         }
 
