@@ -315,8 +315,8 @@ sub wrapsubs {
         die("Bad param 'packages'");
     }
 
-    return undef if(!$params{pre} && !$params{post});
-    $params{pre} ||= sub {};
+    return undef unless grep { $params{$_} } qw/ pre post /;
+    $params{pre}  ||= sub {};
     $params{post} ||= sub {};
 
     foreach my $sub (@{$params{subs}}) {
