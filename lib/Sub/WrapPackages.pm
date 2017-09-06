@@ -191,14 +191,14 @@ sub import {
 }
 
 sub _subs_in_packages {
-    my @targets = map { $_.'::' } @_;
+    my @targets = @_;
 
     my @subs;
-    foreach my $package (@targets) {
-        no strict;
-        while(my($k, $v) = each(%{$package})) {
-            push @subs, $package.$k if(ref($v) ne 'SCALAR' && defined(&{$v}));
-        }
+    foreach my $package ( grep { !/\*/ } @targets) {
+        push @subs, 
+            grep { ! eval { $constant::declared{$_} } } # remove constants
+            map { join '::', $package, $_ }
+            Package::Stash->new($package)->list_all_symbols('CODE');
     }
     return @subs;
 }
