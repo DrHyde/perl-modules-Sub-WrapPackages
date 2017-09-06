@@ -350,13 +350,13 @@ sub wrapsubs {
             if(prototype($ORIGINAL_SUBS{$sub}));
 
         {
-            no strict 'refs';
-            no warnings 'redefine';
             $WRAPPED_BY_WRAPPER{$imposter} = $ORIGINAL_SUBS{$sub};
             $WRAPPER_BY_WRAPPED{$ORIGINAL_SUBS{$sub}} = $imposter;
 
-            *{$sub} = $imposter;
-            print STDERR "wrapped $sub\n" if($params{debug});
+            my $local_sub = $sub;
+            $local_sub =~ s#(^.*)::##;
+            Package::Stash->new($1)->add_symbol('&'.$local_sub => $imposter);
+            print STDERR "wrapped $sub\n" if $params{debug};
         };
     }
 }
