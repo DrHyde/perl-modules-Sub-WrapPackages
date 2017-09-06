@@ -185,7 +185,7 @@ I borrowed out of L<Acme::Voodoo>.
 
 sub import {
     shift;
-    wrapsubs(@_) if(@_);
+    wrapsubs(@_);
 }
 
 sub _subs_in_packages {
