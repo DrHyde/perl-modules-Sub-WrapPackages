@@ -295,13 +295,13 @@ sub wrapsubs {
 
                 # get inherited (but not over-ridden!) subs
                 my %subs_in_package = map {
-                    s/.*:://; ($_, 1);
+                    (split '::' )[-1] => 1
                 } _subs_in_packages($package);
 
                 my @subs_to_define = grep {
                     !exists($subs_in_package{$_})
                 } map { 
-                    s/.*:://; $_;
+                    (split '::' )[-1]
                 } _subs_in_packages(@parents);
 
                 # define proxy method that just does a goto to get
