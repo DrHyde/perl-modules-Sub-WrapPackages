@@ -3,16 +3,16 @@ use warnings;
 
 package Sub::WrapPackages;
 
-use vars '$VERSION';
-use vars '%ORIGINAL_SUBS'; # coderefs of what we're wrapping, keyed
-                           #   by package::sub
-use vars '@MAGICINCS';     # list of magic INC subs, used by lib.pm hack
-use vars '%INHERITED';     # coderefs of inherited methods (before proxies
-                           #   installed), keys by package::sub
-use vars '%WRAPPED_BY_WRAPPER'; # coderefs of original subs, keyed by
-                                #   stringified coderef of wrapper
-use vars '%WRAPPER_BY_WRAPPED'; # coderefs of wrapper subs, keyed by
-                                #   stringified coderef of original sub
+our $VERSION;
+our %ORIGINAL_SUBS; # coderefs of what we're wrapping, keyed
+                    #   by package::sub
+our @MAGICINCS;     # list of magic INC subs, used by lib.pm hack
+our %INHERITED;     # coderefs of inherited methods (before proxies
+                    #   installed), keys by package::sub
+our %WRAPPED_BY_WRAPPER; # coderefs of original subs, keyed by
+                         #   stringified coderef of wrapper
+our %WRAPPER_BY_WRAPPED; # coderefs of wrapper subs, keyed by
+                         #   stringified coderef of original sub
 use Sub::Prototype ();
 use Devel::Caller::IgnoreNamespaces;
 Devel::Caller::IgnoreNamespaces::register(__PACKAGE__);
