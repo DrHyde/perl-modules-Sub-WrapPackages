@@ -16,6 +16,7 @@ our %WRAPPER_BY_WRAPPED; # coderefs of wrapper subs, keyed by
 use Sub::Prototype ();
 use Devel::Caller::IgnoreNamespaces;
 Devel::Caller::IgnoreNamespaces::register(__PACKAGE__);
+use Package::Stash;
 
 use Data::Dumper;
 $Data::Dumper::Deparse = 1;
@@ -358,12 +359,9 @@ sub wrapsubs {
     }
 }
 
-package # break up the package declaration so that metacpan doesn't whine
-    lib;
-use strict; no strict 'refs';
-use warnings; no warnings 'redefine';
 
-my $originallibimport = \&{'lib::import'};
+my $originallibimport = \&lib::import;
+
 my $newimport = sub {
     $originallibimport->(@_);
     my %magicincs = map { $_, 1 } @Sub::WrapPackages::MAGICINCS;
@@ -373,6 +371,6 @@ my $newimport = sub {
     );
 };
 
-*{'lib::import'} = $newimport;
+Package::Stash->new('lib')->add_symbol( '&import' => $newimport );
 
 1;
