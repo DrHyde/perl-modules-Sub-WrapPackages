@@ -179,9 +179,11 @@ constant.pm being Far Too Clever, and providing a patch and test;
 
 to Adam Trickett who thought this was a jolly good idea;
 
-and to Ed
+to Ed
 Summers, whose code for figgering out what functions a package contains
-I borrowed out of L<Acme::Voodoo>.
+I borrowed out of L<Acme::Voodoo>;
+
+and to Yanick Champoux for numerous readability improvements.
 
 =cut
 

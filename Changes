@@ -1,3 +1,6 @@
+XXXX-XX-XX   XXXX  Use Package::Stash instead of manually fondling the
+                     symbol table
+
 2010-07-06   2.01  Bugfixes for wrapping Foo::* - don't wrap FooBar,
                      only Foo::Bar and friends
 
