@@ -355,7 +355,8 @@ sub wrapsubs {
 
             my $local_sub = $sub;
             $local_sub =~ s#(^.*)::##;
-            Package::Stash->new($1)->add_symbol('&'.$local_sub => $imposter);
+            my $package = $1;
+            Package::Stash->new($package)->add_symbol('&'.$local_sub => $imposter);
             print STDERR "wrapped $sub\n" if $params{debug};
         };
     }
