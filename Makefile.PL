@@ -10,8 +10,9 @@ WriteMakefile(
     },
     VERSION_FROM => 'lib/Sub/WrapPackages.pm',
     PREREQ_PM    => {
-        'Sub::Prototype' => 0.02,
-        # 'Sub::Uplevel'   => 0.22,
         'Devel::Caller::IgnoreNamespaces' => 1.0,
+	'List::MoreUtils'                 => 0,
+	'Package::Stash'                  => 0,
+        'Sub::Prototype'                  => 0.02,
     }
 );
