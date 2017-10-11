@@ -146,8 +146,7 @@ do that.  You shouldn't be doing that anyway.  Mind you, you shouldn't
 be doing the things that this module does either.  BAD PROGRAMMER, NO
 BIKKIT!
 
-If you find any other lurking horrors, please report them using
-L<https://rt.cpan.org/Public/Dist/Display.html?Name=Sub-WrapPackages>.
+Bug reports should be made on Github or by email.
 
 =head1 FEEDBACK
 
