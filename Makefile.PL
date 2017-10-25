@@ -11,7 +11,8 @@ WriteMakefile(
     VERSION_FROM => 'lib/Sub/WrapPackages.pm',
     PREREQ_PM    => {
         'Devel::Caller::IgnoreNamespaces' => 1.0,
-        'Package::Stash'                  => 0,
+	'List::MoreUtils'                 => 0,
+	'Package::Stash'                  => 0,
         'Sub::Prototype'                  => 0.02,
     }
 );
