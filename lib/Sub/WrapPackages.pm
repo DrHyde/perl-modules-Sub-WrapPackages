@@ -20,9 +20,26 @@ Devel::Caller::IgnoreNamespaces::register(__PACKAGE__);
 use Data::Dumper;
 $Data::Dumper::Deparse = 1;
 
-use lib ();
-
 $VERSION = '2.01';
+
+use lib ();
+{
+    no strict 'refs';
+    no warnings 'redefine';
+    
+    my $originallibimport = \&{'lib::import'};
+    my $newimport = sub {
+        $originallibimport->(@_);
+        my %magicincs = map { $_, 1 } @Sub::WrapPackages::MAGICINCS;
+        @INC = (
+            (grep { exists($magicincs{$_}); } @INC),
+            (grep { !exists($magicincs{$_}); } @INC)
+        );
+    };
+    
+    *{'lib::import'} = $newimport;
+}
+
 
 =head1 NAME
 
@@ -358,22 +375,5 @@ sub wrapsubs {
         };
     }
 }
-
-package # break up the package declaration so that metacpan doesn't whine
-    lib;
-use strict; no strict 'refs';
-use warnings; no warnings 'redefine';
-
-my $originallibimport = \&{'lib::import'};
-my $newimport = sub {
-    $originallibimport->(@_);
-    my %magicincs = map { $_, 1 } @Sub::WrapPackages::MAGICINCS;
-    @INC = (
-        (grep { exists($magicincs{$_}); } @INC),
-        (grep { !exists($magicincs{$_}); } @INC)
-    );
-};
-
-*{'lib::import'} = $newimport;
 
 1;
