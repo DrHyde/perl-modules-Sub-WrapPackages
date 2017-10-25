@@ -17,6 +17,7 @@ use Sub::Prototype ();
 use Devel::Caller::IgnoreNamespaces;
 Devel::Caller::IgnoreNamespaces::register(__PACKAGE__);
 use Package::Stash;
+use List::MoreUtils qw/ part /;
 
 use Data::Dumper;
 $Data::Dumper::Deparse = 1;
@@ -368,10 +369,9 @@ my $originallibimport = \&lib::import;
 my $newimport = sub {
     $originallibimport->(@_);
     my %magicincs = map { $_, 1 } @Sub::WrapPackages::MAGICINCS;
-    @INC = (
-        (grep { exists($magicincs{$_}); } @INC),
-        (grep { !exists($magicincs{$_}); } @INC)
-    );
+
+    # reorder with the magicked incs first
+    @INC = map { @$_ } grep { $_ } part { !exists $magicincs{$_} } @INC;
 };
 
 Package::Stash->new('lib')->add_symbol( '&import' => $newimport );
