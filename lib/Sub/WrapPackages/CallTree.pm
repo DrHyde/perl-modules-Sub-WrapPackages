@@ -27,7 +27,7 @@ sub import {
 
 =head1 NAME
 
-Sub::WrapPackages::CallTree
+Sub::WrapPackages::CallTree - show a tree of function calls
 
 =head1 DESCRIPTION
 
