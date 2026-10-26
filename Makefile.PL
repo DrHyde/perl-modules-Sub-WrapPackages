@@ -1,8 +1,10 @@
 use ExtUtils::MakeMaker;
 WriteMakefile(
     NAME       => 'Sub::WrapPackages',
-    META_MERGE => {
+    META_ADD => {
         license   => 'open_source',
+},
+META_MERGE => {
         resources => {
             repository => 'https://github.com/DrHyde/perl-modules-Sub-WrapPackages',
             bugtracker => 'https://github.com/DrHyde/perl-modules-Sub-WrapPackages/issues'
